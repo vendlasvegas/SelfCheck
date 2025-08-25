@@ -1,0 +1,8 @@
+
+Pillow>=9.0.0
+RPi.GPIO>=0.7.0
+requests>=2.25.0
+gspread>=5.0.0
+google-auth>=2.0.0
+google-api-python-client>=2.0.0
+qrcode>=7.0
