@@ -313,6 +313,118 @@ class IdleMode(BaseMode):
         except Exception as e:
             logging.error(f"Failed to update weather: {e}")
 
-    
+    # modes/idle_mode.py (continued)
+    def _load_images(self):
+        IDLE_DIR.mkdir(parents=True, exist_ok=True)
+        return [p for p in sorted(IDLE_DIR.iterdir())
+                if p.is_file() and p.suffix.lower() in IMAGE_EXTS]
 
-_Note: `1000013652.jpg` and `cartmode.txt` were excluded from the analysis due to size limit. Please upload again or start a new conversation if your question is related to them._
+    def _letterbox(self, im: Image.Image):
+        """Force letterboxing by scaling to 90% of screen height"""
+        # Force some letterboxing by scaling to 90% of screen height
+        target_height = int(WINDOW_H * 0.9)
+        
+        # Calculate width to maintain aspect ratio
+        aspect_ratio = im.width / im.height
+        target_width = int(target_height * aspect_ratio)
+        
+        # Ensure width doesn't exceed screen width
+        if target_width > WINDOW_W:
+            target_width = int(WINDOW_W * 0.9)
+            target_height = int(target_width / aspect_ratio)
+        
+        # Resize image
+        resized = im.resize((target_width, target_height), Image.LANCZOS)
+        
+        # Create black background
+        bg = Image.new("RGB", (WINDOW_W, WINDOW_H), (0, 0, 0))
+        
+        # Paste resized image in center
+        x_offset = (WINDOW_W - target_width) // 2
+        y_offset = (WINDOW_H - target_height) // 2
+        bg.paste(resized, (x_offset, y_offset))
+        
+        logging.info(f"Forced letterboxing - Image: {target_width}x{target_height}, " +
+                    f"Letterbox top/bottom: {y_offset}px, left/right: {x_offset}px")
+        
+        return bg
+
+    def _show_next(self):
+        if not self.is_active:
+            return
+            
+        if not self.order:
+            frame = Image.new("RGB", (WINDOW_W, WINDOW_H), (0, 0, 0))
+            d = ImageDraw.Draw(frame)
+            msg = f"No images in {IDLE_DIR}"
+            w, h = d.textbbox((0,0), msg, font=load_ttf(24))[2:]
+            d.text(((WINDOW_W - w)//2, (WINDOW_H - h)//2), msg, font=load_ttf(24), fill=(255,255,255))
+        else:
+            path = self.order[self.idx]
+            logging.info("Idle: showing %s", path.name)
+            self.idx = (self.idx + 1) % len(self.order)
+            try:
+                with Image.open(path) as im:
+                    if im.mode in ("RGBA", "P"):
+                        im = im.convert("RGB")
+                    frame = self._letterbox(im)
+            except Exception as e:
+                logging.error("Idle: failed to load %s: %s", path, e)
+                frame = Image.new("RGB", (WINDOW_W, WINDOW_H), (0, 0, 0))
+
+        if self.is_active:  # Check again in case mode changed during image loading
+            self.tk_img = ImageTk.PhotoImage(frame)
+            self.label.configure(image=self.tk_img)
+            self.label.lift()
+            
+            # Schedule next slide
+            self.slide_after = self.root.after(SLIDE_MS, self._show_next)
+
+    def _update_overlays(self):
+        """Update text overlays"""
+        if not self.is_active:
+            return
+            
+        # Position bottom text
+        self.bottom_text.place(x=WINDOW_W//2, y=WINDOW_H-50, anchor="center")
+        
+        # Update and position time
+        current_time = datetime.now().strftime("%I:%M %p")
+        self.time_label.config(text=current_time)
+        self.time_label.place(x=WINDOW_W-100, y=30, anchor="center")
+        
+        # Update and position weather
+        if self.weather_data:
+            try:
+                temp = self.weather_data.get('main', {}).get('temp', 'N/A')
+                city = self.weather_data.get('name', 'Unknown')
+                weather_text = f"{city} {int(temp)}°F"
+                self.weather_label.config(text=weather_text)
+                self.weather_label.place(x=WINDOW_W//2, y=30, anchor="center")
+            except Exception as e:
+                logging.error(f"Error displaying weather: {e}")
+        
+        # Position hidden admin button in top-left corner
+        # Reduced to 25% of original size (from 100x100 to 25x25)
+        self.admin_button.place(x=0, y=0, width=25, height=25)
+        
+        # Ensure overlays stay on top
+        self._lift_overlays()
+        
+        # Schedule next update only if still active
+        if self.is_active:
+            self.overlay_timer = self.root.after(1000, self._update_overlays)
+        
+    def _lift_overlays(self):
+        """Ensure all overlay elements stay on top"""
+        # Only lift elements that have been placed
+        if self.is_active:  # Only lift if mode is active
+            if self.bottom_text.winfo_ismapped():
+                self.bottom_text.lift()
+            if self.time_label.winfo_ismapped():
+                self.time_label.lift()
+            if self.weather_label.winfo_ismapped():
+                self.weather_label.lift()
+            if self.admin_button.winfo_ismapped():
+                self.admin_button.lift()
+
