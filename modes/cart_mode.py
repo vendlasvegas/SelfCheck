@@ -1,4 +1,5 @@
 # modes/cart_mode.py
+# 8-26-25 11:30
 import time
 import logging
 import tkinter as tk
@@ -29,7 +30,7 @@ class CartMode(BaseMode):
         
         # Get drive service directly from root if available
         self.drive_service = getattr(root, 'drive_service', None)
-        
+                    
         # Log drive service status
         if self.drive_service:
             logging.info("Drive service successfully accessed in CartMode")
@@ -120,6 +121,13 @@ class CartMode(BaseMode):
     def start(self):
         logging.info("CartMode: Starting")
         super().start()
+
+            """Start cart mode."""
+        logging.info("Starting Cart Mode")
+    
+        # Debug information
+        logging.info(f"Window dimensions: {self.root.winfo_width()}x{self.root.winfo_height()}")
+        logging.info(f"Frame exists: {hasattr(self, 'frame')}")
         
         # Generate a new transaction ID
         self.transaction_id = self._generate_transaction_id()
@@ -174,6 +182,8 @@ class CartMode(BaseMode):
 
     # Simplified implementation - in a real implementation, these methods would be fully implemented
     def _create_ui(self):
+            """Set up the cart mode UI."""
+        logging.info("Setting up Cart Mode UI")
         """Create the cart UI elements."""
         # Show main background
         self.label.place(x=0, y=0, width=WINDOW_W, height=WINDOW_H)
