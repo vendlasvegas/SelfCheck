@@ -1,4 +1,5 @@
 # components/admin_login.py
+# 8-26-25
 import tkinter as tk
 import logging
 import gspread
@@ -243,30 +244,6 @@ class AdminLoginScreen:
             # Check credentials
             for i, user in enumerate(users):
                 if user == username and i < len(passes) and passes[i] == password:
-                    logging
-
-# components/admin_login.py (continued)
-    def _verify_credentials(self, username, password):
-        try:
-            # Connect to Google Sheet with expanded scopes
-            scopes = [
-                "https://www.googleapis.com/auth/spreadsheets.readonly",
-                "https://www.googleapis.com/auth/drive.readonly",
-                "https://www.googleapis.com/auth/spreadsheets",
-            ]
-            creds = Credentials.from_service_account_file(str(GS_CRED_PATH), scopes=scopes)
-            gc = gspread.authorize(creds)
-
-            # Get login tab
-            sheet = gc.open(GS_SHEET_NAME).worksheet(GS_LOGIN_TAB)
-
-            # Get all usernames and passwords (skip header row)
-            users = sheet.col_values(1)[1:]  # Column A (usernames)
-            passes = sheet.col_values(2)[1:]  # Column B (passwords)
-
-            # Check credentials
-            for i, user in enumerate(users):
-                if user == username and i < len(passes) and passes[i] == password:
                     logging.info(f"Successful login for user: {username}")
                     if hasattr(self, "on_login_success"):
                         self.on_login_success()
@@ -302,4 +279,3 @@ class AdminLoginScreen:
 
     def hide(self):
         self.frame.place_forget()
-
