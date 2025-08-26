@@ -1,5 +1,5 @@
 # modes/cart_mode.py
-# 8-26-25 11:30
+# 8-26-25 11:50
 import time
 import logging
 import tkinter as tk
@@ -117,12 +117,11 @@ class CartMode(BaseMode):
                 self.scan_item(barcode)
         elif event.char.isprintable():
             self.barcode_buffer += event.char
-
+            
     def start(self):
         logging.info("CartMode: Starting")
         super().start()
-
-            """Start cart mode."""
+        """Start cart mode."""
         logging.info("Starting Cart Mode")
     
         # Debug information
